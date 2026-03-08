@@ -1,0 +1,43 @@
+##
+## Stage 1 — Build
+##
+FROM maven:3.9.6-eclipse-temurin-21 AS build
+
+WORKDIR /workspace
+
+# Cache Maven dependencies first (layer caching)
+COPY pom.xml .
+RUN mvn dependency:go-offline -q
+
+# Build the application (skip tests in Docker build; run them in CI)
+COPY src ./src
+RUN mvn package -DskipTests -q
+
+##
+## Stage 2 — Run (JVM mode)
+## Uses a minimal JRE image for a smaller runtime footprint.
+##
+FROM eclipse-temurin:21-jre-alpine
+
+LABEL maintainer="api@example.com"
+LABEL org.opencontainers.image.title="quarkus-app"
+LABEL org.opencontainers.image.version="1.0.0"
+
+# Create non-root user for security
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+WORKDIR /app
+
+# Copy the Quarkus fast-jar output
+COPY --from=build /workspace/target/quarkus-app/             /app/quarkus-app/
+COPY --from=build /workspace/target/quarkus-app-runner.jar   /app/
+
+RUN chown -R appuser:appgroup /app
+
+USER appuser
+
+EXPOSE 8080
+
+ENV JAVA_OPTS="-Xms128m -Xmx512m -XX:+UseZGC -Djava.net.preferIPv4Stack=true"
+
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar /app/quarkus-app-runner.jar"]

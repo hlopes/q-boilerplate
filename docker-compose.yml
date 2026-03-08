@@ -1,0 +1,85 @@
+version: "3.9"
+
+# =====================================================
+# Local development stack
+# =====================================================
+
+services:
+
+  # ---- PostgreSQL ----
+  postgres:
+    image: postgres:16-alpine
+    container_name: quarkus-postgres
+    environment:
+      POSTGRES_DB: appdb
+      POSTGRES_USER: app_user
+      POSTGRES_PASSWORD: app_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app_user -d appdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  # ---- Application (JVM mode) ----
+  app:
+    build:
+      context: .
+      dockerfile: src/main/docker/Dockerfile.jvm
+    container_name: quarkus-app
+    ports:
+      - "8080:8080"
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/appdb
+      DB_USERNAME: app_user
+      DB_PASSWORD: app_password
+      JWT_ISSUER: https://example.com/issuer
+      QUARKUS_PROFILE: prod
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health/live"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  # ---- Prometheus ----
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: quarkus-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infra/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on:
+      - app
+    networks:
+      - app-network
+
+  # ---- Grafana ----
+  grafana:
+    image: grafana/grafana:latest
+    container_name: quarkus-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    depends_on:
+      - prometheus
+    networks:
+      - app-network
+
+volumes:
+  postgres_data:
+
+networks:
+  app-network:
+    driver: bridge
