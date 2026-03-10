@@ -21,6 +21,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * REST resource for Product management.
@@ -98,7 +99,7 @@ public class ProductResource {
             content = @Content(schema = @Schema(implementation = ProductDto.ProductResponse.class))),
         @APIResponse(responseCode = "404", description = "Product not found")
     })
-    public Response getProductById(@PathParam("id") Long id) {
+    public Response getProductById(@PathParam("id") UUID id) {
         return Response.ok(productService.findById(id)).build();
     }
 
@@ -113,7 +114,7 @@ public class ProductResource {
     public Response createProduct(@Valid ProductDto.CreateProductRequest request,
                                   @Context UriInfo uriInfo) {
         ProductDto.ProductResponse created = productService.createProduct(request);
-        URI location = uriInfo.getAbsolutePathBuilder().path(String.valueOf(created.id())).build();
+        URI location = uriInfo.getAbsolutePathBuilder().path(created.id().toString()).build();
         return Response.created(location).entity(created).build();
     }
 
@@ -125,7 +126,7 @@ public class ProductResource {
         @APIResponse(responseCode = "200", description = "Product updated"),
         @APIResponse(responseCode = "404", description = "Product not found")
     })
-    public Response updateProduct(@PathParam("id") Long id,
+    public Response updateProduct(@PathParam("id") UUID id,
                                   @Valid ProductDto.UpdateProductRequest request) {
         return Response.ok(productService.updateProduct(id, request)).build();
     }
@@ -138,7 +139,7 @@ public class ProductResource {
         @APIResponse(responseCode = "204", description = "Product deleted"),
         @APIResponse(responseCode = "404", description = "Product not found")
     })
-    public Response deleteProduct(@PathParam("id") Long id) {
+    public Response deleteProduct(@PathParam("id") UUID id) {
         productService.deleteProduct(id);
         return Response.noContent().build();
     }

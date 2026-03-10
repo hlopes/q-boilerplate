@@ -2,14 +2,17 @@ package com.example.dto;
 
 import com.example.entity.Product;
 import jakarta.validation.constraints.*;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Data Transfer Objects for Product operations.
  */
+@NoArgsConstructor(access = lombok.AccessLevel.PRIVATE)
 public final class ProductDto {
 
     /** Request DTO for creating a new product */
@@ -58,7 +61,7 @@ public final class ProductDto {
 
     /** Full product response DTO */
     public record ProductResponse(
-            Long id,
+            UUID id,
             String name,
             String description,
             String sku,
@@ -78,6 +81,4 @@ public final class ProductDto {
             long totalElements,
             int totalPages
     ) {}
-
-    private ProductDto() {}
 }

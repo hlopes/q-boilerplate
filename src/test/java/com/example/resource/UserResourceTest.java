@@ -84,8 +84,9 @@ class UserResourceTest {
     @Test
     @Order(4)
     void givenNonExistentId_whenGetUser_thenReturn404() {
+        String nonExistentId = java.util.UUID.randomUUID().toString();
         given()
-            .when().get(BASE_PATH + "/9999999")
+            .when().get(BASE_PATH + "/" + nonExistentId)
             .then()
             .statusCode(anyOf(is(404), is(401)));
     }

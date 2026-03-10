@@ -1,6 +1,6 @@
 package com.example.entity;
 
-import io.quarkus.hibernate.orm.panache.PanacheEntity;
+import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.Getter;
@@ -9,6 +9,7 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 /**
  * Product entity with price, stock, and category information.
@@ -25,7 +26,12 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @NoArgsConstructor
-public class Product extends PanacheEntity {
+public class Product extends PanacheEntityBase {
+
+    @Id
+    @GeneratedValue
+    @Column(name = "id", updatable = false, nullable = false)
+    public UUID id;
 
     @NotBlank(message = "Product name is required")
     @Size(max = 255)

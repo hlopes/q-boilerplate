@@ -11,6 +11,7 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
+import io.quarkus.logging.Log;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -19,14 +20,13 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-import org.jboss.logging.Logger;
 
 import java.net.URI;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * REST resource exposing User management endpoints.
- * All endpoints require JWT authentication except where noted.
  */
 @Path("/api/v1/users")
 @Produces(MediaType.APPLICATION_JSON)
@@ -34,8 +34,6 @@ import java.util.List;
 @Tag(name = "Users", description = "User management operations")
 @SecurityRequirement(name = "jwt")
 public class UserResource {
-
-    private static final Logger LOG = Logger.getLogger(UserResource.class);
 
     private final UserService userService;
     private final AppConfig appConfig;
@@ -63,8 +61,8 @@ public class UserResource {
             @Parameter(description = "Page index (0-based)") @QueryParam("page") @DefaultValue("0") int page,
             @Parameter(description = "Page size") @QueryParam("size") @DefaultValue("20") int size) {
 
-        LOG.debugf("GET /users page=%d size=%d", page, size);
-        UserDto.UserPageResponse result = userService.listUsers(page, size);
+        Log.debugf("GET /users page=%d size=%d", page, size);
+        UserDto.UserPageResponse result = userService.listUsers(page, Math.min(size, appConfig.pagination().maxPageSize()));
         return Response.ok(result).build();
     }
 
@@ -101,7 +99,7 @@ public class UserResource {
         @APIResponse(responseCode = "404", description = "User not found")
     })
     public Response getUserById(
-            @Parameter(description = "User ID", required = true) @PathParam("id") Long id) {
+            @Parameter(description = "User ID", required = true) @PathParam("id") UUID id) {
 
         UserDto.UserResponse user = userService.findById(id);
         return Response.ok(user).build();
@@ -124,9 +122,9 @@ public class UserResource {
             @Valid UserDto.CreateUserRequest request,
             @Context UriInfo uriInfo) {
 
-        LOG.infof("POST /users username=%s", request.username());
+        Log.infof("POST /users username=%s", request.username());
         UserDto.UserResponse created = userService.createUser(request);
-        URI location = uriInfo.getAbsolutePathBuilder().path(String.valueOf(created.id())).build();
+        URI location = uriInfo.getAbsolutePathBuilder().path(created.id().toString()).build();
         return Response.created(location).entity(created).build();
     }
 
@@ -145,7 +143,7 @@ public class UserResource {
         @APIResponse(responseCode = "409", description = "Email already taken")
     })
     public Response updateUser(
-            @PathParam("id") Long id,
+            @PathParam("id") UUID id,
             @Valid UserDto.UpdateUserRequest request) {
 
         UserDto.UserResponse updated = userService.updateUser(id, request);
@@ -164,7 +162,7 @@ public class UserResource {
         @APIResponse(responseCode = "204", description = "User deactivated"),
         @APIResponse(responseCode = "404", description = "User not found")
     })
-    public Response deactivateUser(@PathParam("id") Long id) {
+    public Response deactivateUser(@PathParam("id") UUID id) {
         userService.deactivateUser(id);
         return Response.noContent().build();
     }
@@ -181,7 +179,7 @@ public class UserResource {
         @APIResponse(responseCode = "204", description = "User deleted"),
         @APIResponse(responseCode = "404", description = "User not found")
     })
-    public Response deleteUser(@PathParam("id") Long id) {
+    public Response deleteUser(@PathParam("id") UUID id) {
         userService.deleteUser(id);
         return Response.noContent().build();
     }

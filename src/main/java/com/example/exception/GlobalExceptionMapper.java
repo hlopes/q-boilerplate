@@ -1,5 +1,6 @@
 package com.example.exception;
 
+import io.quarkus.logging.Log;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.WebApplicationException;
@@ -7,8 +8,6 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
-import org.jboss.logging.Logger;
-
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -20,16 +19,20 @@ import java.util.stream.Collectors;
 @Provider
 public class GlobalExceptionMapper {
 
-    private static final Logger LOG = Logger.getLogger(GlobalExceptionMapper.class);
-
     /**
      * Handles {@link ResourceNotFoundException} → 404 Not Found.
      */
     @Provider
-    public static class NotFoundMapper implements ExceptionMapper<ResourceNotFoundException> {
+    public static class NotFoundMapper
+        implements ExceptionMapper<ResourceNotFoundException>
+    {
         @Override
         public Response toResponse(ResourceNotFoundException ex) {
-            return errorResponse(Response.Status.NOT_FOUND, ex.getMessage(), null);
+            return errorResponse(
+                Response.Status.NOT_FOUND,
+                ex.getMessage(),
+                null
+            );
         }
     }
 
@@ -37,10 +40,16 @@ public class GlobalExceptionMapper {
      * Handles standard JAX-RS {@link NotFoundException} → 404 Not Found.
      */
     @Provider
-    public static class JaxRsNotFoundMapper implements ExceptionMapper<NotFoundException> {
+    public static class JaxRsNotFoundMapper
+        implements ExceptionMapper<NotFoundException>
+    {
         @Override
         public Response toResponse(NotFoundException ex) {
-            return errorResponse(Response.Status.NOT_FOUND, ex.getMessage(), null);
+            return errorResponse(
+                Response.Status.NOT_FOUND,
+                ex.getMessage(),
+                null
+            );
         }
     }
 
@@ -48,10 +57,16 @@ public class GlobalExceptionMapper {
      * Handles {@link ConflictException} → 409 Conflict.
      */
     @Provider
-    public static class ConflictMapper implements ExceptionMapper<ConflictException> {
+    public static class ConflictMapper
+        implements ExceptionMapper<ConflictException>
+    {
         @Override
         public Response toResponse(ConflictException ex) {
-            return errorResponse(Response.Status.CONFLICT, ex.getMessage(), null);
+            return errorResponse(
+                Response.Status.CONFLICT,
+                ex.getMessage(),
+                null
+            );
         }
     }
 
@@ -59,16 +74,27 @@ public class GlobalExceptionMapper {
      * Handles Jakarta Bean Validation errors → 400 Bad Request with field details.
      */
     @Provider
-    public static class ValidationMapper implements ExceptionMapper<ConstraintViolationException> {
+    public static class ValidationMapper
+        implements ExceptionMapper<ConstraintViolationException>
+    {
         @Override
         public Response toResponse(ConstraintViolationException ex) {
-            Map<String, String> violations = ex.getConstraintViolations().stream()
-                    .collect(Collectors.toMap(
-                            v -> extractFieldName(v.getPropertyPath().toString()),
-                            v -> v.getMessage(),
-                            (a, b) -> a
-                    ));
-            return errorResponse(Response.Status.BAD_REQUEST, "Validation failed", violations);
+            Map<String, String> violations = ex
+                .getConstraintViolations()
+                .stream()
+                .collect(
+                    Collectors.toMap(
+                        v -> extractFieldName(v.getPropertyPath().toString()),
+                        v -> v.getMessage(),
+                        (a, b) -> a
+                    )
+                );
+
+            return errorResponse(
+                Response.Status.BAD_REQUEST,
+                "Validation failed",
+                violations
+            );
         }
 
         private String extractFieldName(String propertyPath) {
@@ -82,47 +108,54 @@ public class GlobalExceptionMapper {
      */
     @Provider
     public static class GeneralMapper implements ExceptionMapper<Exception> {
-        private static final Logger LOG = Logger.getLogger(GeneralMapper.class);
-
         @Override
         public Response toResponse(Exception ex) {
             if (ex instanceof WebApplicationException webEx) {
                 Response response = webEx.getResponse();
-                Response.Status status = Response.Status.fromStatusCode(response.getStatus());
+                Response.Status status = Response.Status.fromStatusCode(
+                    response.getStatus()
+                );
+
                 return errorResponse(status, webEx.getMessage(), null);
             }
 
-            LOG.error("Unhandled exception: " + ex.toString(), ex);
+            Log.error("Unhandled exception: " + ex.toString(), ex);
+
             return errorResponse(
-                    Response.Status.INTERNAL_SERVER_ERROR,
-                    "An unexpected error occurred",
-                    null
+                Response.Status.INTERNAL_SERVER_ERROR,
+                "An unexpected error occurred",
+                null
             );
         }
     }
 
     // ---- helpers ----
 
-    static Response errorResponse(Response.Status status, String message, Object details) {
+    static Response errorResponse(
+        Response.Status status,
+        String message,
+        Object details
+    ) {
         var body = new ErrorBody(
-                status.getStatusCode(),
-                status.getReasonPhrase(),
-                message,
-                details,
-                LocalDateTime.now().toString()
+            status.getStatusCode(),
+            status.getReasonPhrase(),
+            message,
+            details,
+            LocalDateTime.now().toString()
         );
+
         return Response.status(status)
-                .type(MediaType.APPLICATION_JSON)
-                .entity(body)
-                .build();
+            .type(MediaType.APPLICATION_JSON)
+            .entity(body)
+            .build();
     }
 
     /** Immutable error response body (Java 21 record). */
     public record ErrorBody(
-            int status,
-            String error,
-            String message,
-            Object details,
-            String timestamp
+        int status,
+        String error,
+        String message,
+        Object details,
+        String timestamp
     ) {}
 }

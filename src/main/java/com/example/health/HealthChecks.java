@@ -50,6 +50,7 @@ public class HealthChecks {
             try {
                 // Lightweight query to verify DB connectivity
                 long count = userRepository.count();
+
                 return HealthCheckResponse.named("database-ready")
                         .status(true)
                         .withData("userCount", count)

@@ -7,16 +7,17 @@ import com.example.exception.ConflictException;
 import com.example.exception.ResourceNotFoundException;
 import com.example.mapper.ProductMapper;
 import com.example.repository.ProductRepository;
+import io.quarkus.logging.Log;
 import io.quarkus.cache.CacheInvalidate;
 import io.quarkus.cache.CacheResult;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.jboss.logging.Logger;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Service layer for Product business logic.
@@ -25,7 +26,6 @@ import java.util.List;
 @RequiredArgsConstructor(onConstructor_ = @Inject)
 public class ProductService {
 
-    private static final Logger LOG = Logger.getLogger(ProductService.class);
     private static final String PRODUCT_CACHE = "product-cache";
 
     private final ProductRepository productRepository;
@@ -40,7 +40,7 @@ public class ProductService {
      * @return product response DTO
      */
     @CacheResult(cacheName = PRODUCT_CACHE)
-    public ProductDto.ProductResponse findById(Long id) {
+    public ProductDto.ProductResponse findById(UUID id) {
         return productRepository.findByIdOptional(id)
                 .map(productMapper::toResponse)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", id));
@@ -109,7 +109,7 @@ public class ProductService {
      */
     @Transactional
     public ProductDto.ProductResponse createProduct(ProductDto.CreateProductRequest request) {
-        LOG.infof("Creating product with sku=%s", request.sku());
+        Log.infof("Creating product with sku=%s", request.sku());
 
         if (productRepository.existsBySku(request.sku())) {
             throw new ConflictException("Product with SKU '" + request.sku() + "' already exists");
@@ -119,9 +119,10 @@ public class ProductService {
         if (product.stockQuantity == null) {
             product.stockQuantity = 0;
         }
-        productRepository.persist(product);
 
-        LOG.infof("Product created with id=%d", product.id);
+        productRepository.persist(product);
+        Log.infof("Product created with id=%s", product.id);
+
         return productMapper.toResponse(product);
     }
 
@@ -134,11 +135,12 @@ public class ProductService {
      */
     @Transactional
     @CacheInvalidate(cacheName = PRODUCT_CACHE)
-    public ProductDto.ProductResponse updateProduct(Long id, ProductDto.UpdateProductRequest request) {
+    public ProductDto.ProductResponse updateProduct(UUID id, ProductDto.UpdateProductRequest request) {
         Product product = productRepository.findByIdOptional(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", id));
 
         productMapper.updateEntity(request, product);
+
         return productMapper.toResponse(product);
     }
 
@@ -149,7 +151,7 @@ public class ProductService {
      */
     @Transactional
     @CacheInvalidate(cacheName = PRODUCT_CACHE)
-    public void deleteProduct(Long id) {
+    public void deleteProduct(UUID id) {
         boolean deleted = productRepository.deleteById(id);
         if (!deleted) {
             throw new ResourceNotFoundException("Product", id);

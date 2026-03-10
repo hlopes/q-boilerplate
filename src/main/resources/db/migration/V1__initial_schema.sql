@@ -7,7 +7,7 @@
 -- Users
 -- -------------------------------------------------------
 CREATE TABLE IF NOT EXISTS users (
-    id               BIGSERIAL PRIMARY KEY,
+    id               UUID         DEFAULT gen_random_uuid(),
     username         VARCHAR(50)  NOT NULL UNIQUE,
     email            VARCHAR(255) NOT NULL UNIQUE,
     password_hash    VARCHAR(255) NOT NULL,
@@ -27,7 +27,7 @@ CREATE INDEX IF NOT EXISTS idx_users_status   ON users (status);
 -- Products
 -- -------------------------------------------------------
 CREATE TABLE IF NOT EXISTS products (
-    id              BIGSERIAL PRIMARY KEY,
+    id              UUID           DEFAULT gen_random_uuid(),
     name            VARCHAR(255)   NOT NULL,
     description     TEXT,
     sku             VARCHAR(100)   NOT NULL UNIQUE,

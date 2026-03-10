@@ -4,13 +4,15 @@ import com.example.entity.User;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 /**
  * Data Transfer Objects for User operations.
- * Uses Java 21 records for immutable, concise DTOs.
  */
+@NoArgsConstructor(access = lombok.AccessLevel.PRIVATE)
 public final class UserDto {
 
     /** Request DTO for creating a new user */
@@ -48,7 +50,7 @@ public final class UserDto {
 
     /** Response DTO — safe to expose to clients (no password) */
     public record UserResponse(
-            Long id,
+            UUID id,
             String username,
             String email,
             String firstName,
@@ -84,6 +86,4 @@ public final class UserDto {
             long expiresIn,
             UserResponse user
     ) {}
-
-    private UserDto() {}
 }

@@ -1,6 +1,6 @@
 package com.example.entity;
 
-import io.quarkus.hibernate.orm.panache.PanacheEntity;
+import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -10,10 +10,11 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 /**
  * User entity representing application users.
- * Extends PanacheEntity for built-in id and active record helpers.
+ * Extends PanacheEntityBase for custom id support.
  */
 @Entity
 @Table(
@@ -27,7 +28,12 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @NoArgsConstructor
-public class User extends PanacheEntity {
+public class User extends PanacheEntityBase {
+
+    @Id
+    @GeneratedValue
+    @Column(name = "id", updatable = false, nullable = false)
+    public UUID id;
 
     @NotBlank(message = "Username is required")
     @Size(min = 3, max = 50, message = "Username must be between 3 and 50 characters")

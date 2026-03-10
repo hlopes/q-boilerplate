@@ -11,10 +11,13 @@ import jakarta.ws.rs.core.Response;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.util.List;
+import java.util.UUID;
 
-@Path("/products-page")
+@Path("/products")
 @Produces(MediaType.TEXT_HTML)
 public class ProductPageResource {
+
+    private static final URI PRODUCTS_URI = URI.create("/products");
 
     @Inject
     Template products;
@@ -33,7 +36,7 @@ public class ProductPageResource {
 
     @GET
     @Path("/{id}")
-    public Response get(@PathParam("id") Long id) {
+    public Response get(@PathParam("id") UUID id) {
         Product product = Product.findById(id);
         if (product == null) {
             TemplateInstance errorPage = error
@@ -58,14 +61,16 @@ public class ProductPageResource {
         product.price = new BigDecimal(priceStr);
         product.stockQuantity = stockQuantity;
         product.persist();
-        return Response.seeOther(URI.create("/products-page")).build();
+
+        return Response.seeOther(PRODUCTS_URI).build();
     }
 
     @POST
     @Path("/{id}/delete")
     @Transactional
-    public Response delete(@PathParam("id") Long id) {
+    public Response delete(@PathParam("id") UUID id) {
         Product.deleteById(id);
-        return Response.seeOther(URI.create("/products-page")).build();
+
+        return Response.seeOther(PRODUCTS_URI).build();
     }
 }

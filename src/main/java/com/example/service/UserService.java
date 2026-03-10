@@ -7,15 +7,16 @@ import com.example.exception.ConflictException;
 import com.example.exception.ResourceNotFoundException;
 import com.example.mapper.UserMapper;
 import com.example.repository.UserRepository;
+import io.quarkus.logging.Log;
 import io.quarkus.cache.CacheInvalidate;
 import io.quarkus.cache.CacheResult;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.jboss.logging.Logger;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Service layer for User business logic.
@@ -25,7 +26,6 @@ import java.util.List;
 @RequiredArgsConstructor(onConstructor_ = @Inject)
 public class UserService {
 
-    private static final Logger LOG = Logger.getLogger(UserService.class);
     private static final String USER_CACHE = "user-cache";
 
     private final UserRepository userRepository;
@@ -40,8 +40,8 @@ public class UserService {
      * @throws ResourceNotFoundException if no user with the given id exists
      */
     @CacheResult(cacheName = USER_CACHE)
-    public UserDto.UserResponse findById(Long id) {
-        LOG.debugf("Fetching user with id=%d", id);
+    public UserDto.UserResponse findById(UUID id) {
+        Log.debugf("Fetching user with id=%s", id);
         User user = userRepository.findByIdOptional(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User", id));
         return userMapper.toResponse(user);
@@ -77,7 +77,7 @@ public class UserService {
      */
     @Transactional
     public UserDto.UserResponse createUser(UserDto.CreateUserRequest request) {
-        LOG.infof("Creating user with username=%s", request.username());
+        Log.infof("Creating user with username=%s", request.username());
 
         if (userRepository.existsByEmail(request.email())) {
             throw new ConflictException("Email '" + request.email() + "' is already registered");
@@ -90,7 +90,7 @@ public class UserService {
         user.passwordHash = hashPassword(request.password());
         userRepository.persist(user);
 
-        LOG.infof("User created with id=%d", user.id);
+        Log.infof("User created with id=%s", user.id);
         return userMapper.toResponse(user);
     }
 
@@ -103,8 +103,8 @@ public class UserService {
      */
     @Transactional
     @CacheInvalidate(cacheName = USER_CACHE)
-    public UserDto.UserResponse updateUser(Long id, UserDto.UpdateUserRequest request) {
-        LOG.debugf("Updating user id=%d", id);
+    public UserDto.UserResponse updateUser(UUID id, UserDto.UpdateUserRequest request) {
+        Log.debugf("Updating user id=%s", id);
 
         User user = userRepository.findByIdOptional(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User", id));
@@ -125,8 +125,8 @@ public class UserService {
      */
     @Transactional
     @CacheInvalidate(cacheName = USER_CACHE)
-    public void deactivateUser(Long id) {
-        LOG.infof("Deactivating user id=%d", id);
+    public void deactivateUser(UUID id) {
+        Log.infof("Deactivating user id=%s", id);
         User user = userRepository.findByIdOptional(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User", id));
         user.status = User.UserStatus.INACTIVE;
@@ -139,8 +139,8 @@ public class UserService {
      */
     @Transactional
     @CacheInvalidate(cacheName = USER_CACHE)
-    public void deleteUser(Long id) {
-        LOG.infof("Deleting user id=%d", id);
+    public void deleteUser(UUID id) {
+        Log.infof("Deleting user id=%s", id);
         boolean deleted = userRepository.deleteById(id);
         if (!deleted) {
             throw new ResourceNotFoundException("User", id);

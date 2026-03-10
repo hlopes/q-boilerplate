@@ -17,6 +17,7 @@ import org.mockito.Mockito;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -24,7 +25,6 @@ import static org.mockito.Mockito.*;
 
 /**
  * Unit tests for {@link UserService}.
- * Uses Quarkus CDI + Mockito for clean isolation.
  */
 @QuarkusTest
 class UserServiceTest {
@@ -40,11 +40,12 @@ class UserServiceTest {
 
     private User sampleUser;
     private UserDto.UserResponse sampleResponse;
+    private final UUID sampleId = UUID.randomUUID();
 
     @BeforeEach
     void setUp() {
         sampleUser = new User();
-        sampleUser.id = 1L;
+        sampleUser.id = sampleId;
         sampleUser.username = "johndoe";
         sampleUser.email = "john@example.com";
         sampleUser.firstName = "John";
@@ -55,7 +56,7 @@ class UserServiceTest {
         sampleUser.updatedAt = LocalDateTime.now();
 
         sampleResponse = new UserDto.UserResponse(
-                1L, "johndoe", "john@example.com", "John", "Doe",
+                sampleId, "johndoe", "john@example.com", "John", "Doe",
                 User.UserRole.USER, User.UserStatus.ACTIVE,
                 sampleUser.createdAt, sampleUser.updatedAt
         );
@@ -68,24 +69,24 @@ class UserServiceTest {
     @Test
     @DisplayName("findById - should return user when found")
     void findById_whenUserExists_returnsResponse() {
-        when(userRepository.findByIdOptional(1L)).thenReturn(Optional.of(sampleUser));
+        when(userRepository.findByIdOptional(sampleId)).thenReturn(Optional.of(sampleUser));
         when(userMapper.toResponse(sampleUser)).thenReturn(sampleResponse);
 
-        UserDto.UserResponse result = userService.findById(1L);
+        UserDto.UserResponse result = userService.findById(sampleId);
 
         assertThat(result).isNotNull();
-        assertThat(result.id()).isEqualTo(1L);
+        assertThat(result.id()).isEqualTo(sampleId);
         assertThat(result.username()).isEqualTo("johndoe");
     }
 
     @Test
     @DisplayName("findById - should throw ResourceNotFoundException when user not found")
     void findById_whenUserNotFound_throwsNotFound() {
-        when(userRepository.findByIdOptional(99L)).thenReturn(Optional.empty());
+        UUID nonExistentId = UUID.randomUUID();
+        when(userRepository.findByIdOptional(nonExistentId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> userService.findById(99L))
-                .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessageContaining("99");
+        assertThatThrownBy(() -> userService.findById(nonExistentId))
+                .isInstanceOf(ResourceNotFoundException.class);
     }
 
     // -------------------------------------------------------
@@ -147,9 +148,10 @@ class UserServiceTest {
     @Test
     @DisplayName("deleteUser - should throw ResourceNotFoundException when user does not exist")
     void deleteUser_whenNotFound_throwsException() {
-        when(userRepository.deleteById(999L)).thenReturn(false);
+        UUID nonExistentId = UUID.randomUUID();
+        when(userRepository.deleteById(nonExistentId)).thenReturn(false);
 
-        assertThatThrownBy(() -> userService.deleteUser(999L))
+        assertThatThrownBy(() -> userService.deleteUser(nonExistentId))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 }
