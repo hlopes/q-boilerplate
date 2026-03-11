@@ -1,45 +1,54 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Product Detail</title>
-    <style>
-        body { font-family: sans-serif; margin: 20px; }
-        .detail-container { border: 1px solid #ddd; padding: 20px; border-radius: 5px; max-width: 600px; }
-        .detail-row { margin-bottom: 10px; }
-        .label { font-weight: bold; }
-        .back-link { display: inline-block; margin-top: 20px; text-decoration: none; color: #007bff; }
-        .back-link:hover { text-decoration: underline; }
-    </style>
-</head>
-<body>
+{#include main_layout title="Product Detail - {product.name}"}
+    {#navigation}
+        <a href="/products">🏠 Back to List</a>
+    {/navigation}
+
     <h1>Product Details</h1>
-    <div class="detail-container">
-        <div class="detail-row">
-            <span class="label">ID:</span> {product.id}
+    <div class="card bg-base-100 w-full shadow-sm">
+      <figure>
+        <img
+          src="https://img.daisyui.com/images/stock/photo-1606107557195-0e29a4b5b4aa.webp"
+          alt="Shoes"
+          class="w-full" />
+      </figure>
+      <div class="card-body">
+        <h2 class="card-title">{product.name}</h2>
+        <p>{product.description ?: 'No description provided.'}</p>
+        <div class="overflow-x-auto">
+          <table class="table table-sm">
+            <tbody>
+              <tr>
+                <td>ID:</td>
+                <td>{product.id}</td>
+              </tr>
+              <tr>
+                <td>SKU:</td>
+                <td>{product.sku}</td>
+              </tr>
+              <tr>
+                <td>Price:</td>
+                <td>${product.price}</td>
+              </tr>
+              <tr>
+                <td>Stock Quantity:</td>
+                <td>{product.stockQuantity}</td>
+              </tr>
+              <tr>
+                <td>Category:</td>
+                <td>{product.category ?: 'N/A'}</td>
+              </tr>
+              <tr>
+                <td>Status:</td>
+                <td>{product.status ?: 'ACTIVE'}</td>
+              </tr>
+              <tr>
+                <td>Description:</td>
+                <td>{product.description ?: 'No description provided.'}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-        <div class="detail-row">
-            <span class="label">Name:</span> {product.name}
-        </div>
-        <div class="detail-row">
-            <span class="label">SKU:</span> {product.sku}
-        </div>
-        <div class="detail-row">
-            <span class="label">Price:</span> {product.price}
-        </div>
-        <div class="detail-row">
-            <span class="label">Stock Quantity:</span> {product.stockQuantity}
-        </div>
-        <div class="detail-row">
-            <span class="label">Category:</span> {product.category}
-        </div>
-        <div class="detail-row">
-            <span class="label">Status:</span> {product.status}
-        </div>
-        <div class="detail-row">
-            <span class="label">Description:</span> {product.description}
-        </div>
+      </div>
     </div>
-    <a href="/products-page" class="back-link">Back to List</a>
-</body>
-</html>
+    <a href="/products" class="back-link">&larr; Back to Product List</a>
+{/include}
