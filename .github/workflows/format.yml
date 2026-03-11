@@ -1,0 +1,31 @@
+name: Auto Format
+
+on:
+  workflow_dispatch: # Allows manual trigger from GitHub UI
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        ref: ${{ github.head_ref || github.ref }}
+    
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        cache: maven
+        
+    - name: Apply Formatting
+      run: ./mvnw spotless:apply
+      
+    - name: Commit changes
+      uses: stefanzweifel/git-auto-commit-action@v5
+      with:
+        commit_message: "style: auto-format code with Spotless"
+        file_pattern: 'src/**/*.java pom.xml .editorconfig'

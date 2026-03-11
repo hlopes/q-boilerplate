@@ -24,6 +24,7 @@
         <compiler-plugin.version>3.15.0</compiler-plugin.version>
         <surefire-plugin.version>3.5.5</surefire-plugin.version>
         <mapstruct.version>1.6.3</mapstruct.version>
+        <spotless.version>3.3.0</spotless.version>
     </properties>
 
     <dependencyManagement>
@@ -223,6 +224,43 @@
                         <maven.home>${maven.home}</maven.home>
                     </systemPropertyVariables>
                 </configuration>
+            </plugin>
+
+            <!-- Spotless for Code Formatting -->
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+                <version>${spotless.version}</version>
+                <configuration>
+                    <java>
+                        <googleJavaFormat/>
+                        <removeUnusedImports />
+                        <formatAnnotations />
+                    </java>
+                    <formats>
+                        <format>
+                            <includes>
+                                <include>src/main/resources/**/*.xml</include>
+                                <include>src/main/resources/**/*.properties</include>
+                                <include>src/main/resources/**/*.sql</include>
+                            </includes>
+                            <trimTrailingWhitespace/>
+                            <endWithNewline/>
+                            <indent>
+                                <spaces>true</spaces>
+                                <spacesPerTab>2</spacesPerTab>
+                            </indent>
+                        </format>
+                    </formats>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <phase>verify</phase>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
