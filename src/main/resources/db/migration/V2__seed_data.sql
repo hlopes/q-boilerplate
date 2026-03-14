@@ -3,14 +3,19 @@
 -- Initial seed data for development / demo environments
 -- =============================================================
 
+-- Seed default tenant
+INSERT INTO tenants (id, domain, status)
+VALUES ('00000000-0000-0000-0000-000000000001', 'default.com', 'ACTIVE')
+ON CONFLICT DO NOTHING;
+
 -- Admin user (password: admin123 — hashed placeholder)
-INSERT INTO users (username, email, password_hash, first_name, last_name, role, status)
-VALUES ('admin', 'admin@example.com', 'e3afed0047b08059d0fada10f400c1e5', 'Admin', 'User', 'ADMIN', 'ACTIVE')
+INSERT INTO users (tenant_id, email, first_name, last_name, role, status)
+VALUES ('00000000-0000-0000-0000-000000000001', 'admin@example.com', 'Admin', 'User', 'ADMIN', 'ACTIVE')
 ON CONFLICT DO NOTHING;
 
 -- Demo regular user
-INSERT INTO users (username, email, password_hash, first_name, last_name, role, status)
-VALUES ('jdoe', 'john.doe@example.com', 'e3afed0047b08059d0fada10f400c1e5', 'John', 'Doe', 'USER', 'ACTIVE')
+INSERT INTO users (tenant_id, email, first_name, last_name, role, status)
+VALUES ('00000000-0000-0000-0000-000000000001', 'john.doe@example.com', 'John', 'Doe', 'USER', 'ACTIVE')
 ON CONFLICT DO NOTHING;
 
 -- Sample products

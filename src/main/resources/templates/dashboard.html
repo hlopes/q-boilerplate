@@ -1,0 +1,17 @@
+{#include main_layout title="Dashboard"}
+    <h2>Dashboard</h1>
+
+    <h1>Multi-Tenant Dashboard (Google Login)</h1>
+
+    {#if userEmail == null}
+      <p><a href="/products">Login with Google</a></p>
+    {#else}
+      <h2>Welcome (@{userEmail})</h2>
+      {#if userPicture}
+        <img src="{userPicture}" alt="avatar" width="64" height="64" />
+      {/if}
+      <p>Tenant: {tenantDomain}</p>
+      <p><a href="/logout">Logout</a></p>
+    {/if}
+
+{/include}

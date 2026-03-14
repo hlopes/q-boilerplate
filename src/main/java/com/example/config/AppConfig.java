@@ -10,22 +10,22 @@ import io.smallrye.config.WithDefault;
 @ConfigMapping(prefix = "app")
 public interface AppConfig {
 
-  /** Pagination settings */
-  Pagination pagination();
+    /** Pagination settings */
+    Pagination pagination();
 
-  /** Security settings */
-  Security security();
+    /** Security settings */
+    Security security();
 
-  interface Pagination {
-    @WithDefault("20")
-    int defaultPageSize();
+    interface Pagination {
+        @WithDefault("20")
+        int defaultPageSize();
 
-    @WithDefault("100")
-    int maxPageSize();
-  }
+        @WithDefault("100")
+        int maxPageSize();
+    }
 
-  interface Security {
-    @WithDefault("60")
-    long tokenExpiryMinutes();
-  }
+    interface Security {
+        @WithDefault("60")
+        long tokenExpiryMinutes();
+    }
 }

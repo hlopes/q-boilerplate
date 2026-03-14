@@ -9,6 +9,7 @@ import com.example.entity.User;
 import com.example.exception.ConflictException;
 import com.example.exception.ResourceNotFoundException;
 import com.example.mapper.UserMapper;
+import com.example.repository.TenantRepository;
 import com.example.repository.UserRepository;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
@@ -24,130 +25,136 @@ import org.junit.jupiter.api.Test;
 @QuarkusTest
 class UserServiceTest {
 
-  @Inject UserService userService;
+    @Inject
+    UserService userService;
 
-  @InjectMock UserRepository userRepository;
+    @InjectMock
+    UserRepository userRepository;
 
-  @InjectMock UserMapper userMapper;
+    @InjectMock
+    TenantRepository tenantRepository;
 
-  private User sampleUser;
-  private UserDto.UserResponse sampleResponse;
-  private final UUID sampleId = UUID.randomUUID();
+    @InjectMock
+    UserMapper userMapper;
 
-  @BeforeEach
-  void setUp() {
-    sampleUser = new User();
-    sampleUser.id = sampleId;
-    sampleUser.username = "johndoe";
-    sampleUser.email = "john@example.com";
-    sampleUser.firstName = "John";
-    sampleUser.lastName = "Doe";
-    sampleUser.role = User.UserRole.USER;
-    sampleUser.status = User.UserStatus.ACTIVE;
-    sampleUser.createdAt = LocalDateTime.now();
-    sampleUser.updatedAt = LocalDateTime.now();
+    private User sampleUser;
+    private com.example.entity.Tenant sampleTenant;
+    private UserDto.UserResponse sampleResponse;
+    private final UUID sampleId = UUID.randomUUID();
+    private final UUID tenantId = UUID.randomUUID();
 
-    sampleResponse =
-        new UserDto.UserResponse(
-            sampleId,
-            "johndoe",
-            "john@example.com",
-            "John",
-            "Doe",
-            User.UserRole.USER,
-            User.UserStatus.ACTIVE,
-            sampleUser.createdAt,
-            sampleUser.updatedAt);
-  }
+    @BeforeEach
+    void setUp() {
+        sampleTenant = new com.example.entity.Tenant();
+        sampleTenant.id = tenantId;
+        sampleTenant.domain = "test.com";
 
-  // -------------------------------------------------------
-  // findById
-  // -------------------------------------------------------
+        sampleUser = new User();
+        sampleUser.id = sampleId;
+        sampleUser.tenant = sampleTenant;
+        sampleUser.email = "john@example.com";
+        sampleUser.firstName = "John";
+        sampleUser.lastName = "Doe";
+        sampleUser.role = User.UserRole.USER;
+        sampleUser.status = User.UserStatus.ACTIVE;
+        sampleUser.createdAt = LocalDateTime.now();
+        sampleUser.updatedAt = LocalDateTime.now();
 
-  @Test
-  @DisplayName("findById - should return user when found")
-  void findById_whenUserExists_returnsResponse() {
-    when(userRepository.findByIdOptional(sampleId)).thenReturn(Optional.of(sampleUser));
-    when(userMapper.toResponse(sampleUser)).thenReturn(sampleResponse);
+        sampleResponse = new UserDto.UserResponse(
+                sampleId,
+                tenantId,
+                "john@example.com",
+                "John",
+                "Doe",
+                User.UserRole.USER,
+                User.UserStatus.ACTIVE,
+                sampleUser.createdAt,
+                sampleUser.updatedAt);
+    }
 
-    UserDto.UserResponse result = userService.findById(sampleId);
+    // -------------------------------------------------------
+    // findById
+    // -------------------------------------------------------
 
-    assertThat(result).isNotNull();
-    assertThat(result.id()).isEqualTo(sampleId);
-    assertThat(result.username()).isEqualTo("johndoe");
-  }
+    @Test
+    @DisplayName("findById - should return user when found")
+    void findById_whenUserExists_returnsResponse() {
+        when(userRepository.findByIdOptional(sampleId)).thenReturn(Optional.of(sampleUser));
+        when(userMapper.toResponse(sampleUser)).thenReturn(sampleResponse);
 
-  @Test
-  @DisplayName("findById - should throw ResourceNotFoundException when user not found")
-  void findById_whenUserNotFound_throwsNotFound() {
-    UUID nonExistentId = UUID.randomUUID();
-    when(userRepository.findByIdOptional(nonExistentId)).thenReturn(Optional.empty());
+        UserDto.UserResponse result = userService.findById(sampleId);
 
-    assertThatThrownBy(() -> userService.findById(nonExistentId))
-        .isInstanceOf(ResourceNotFoundException.class);
-  }
+        assertThat(result).isNotNull();
+        assertThat(result.id()).isEqualTo(sampleId);
+    }
 
-  // -------------------------------------------------------
-  // createUser
-  // -------------------------------------------------------
+    @Test
+    @DisplayName("findById - should throw ResourceNotFoundException when user not found")
+    void findById_whenUserNotFound_throwsNotFound() {
+        UUID nonExistentId = UUID.randomUUID();
+        when(userRepository.findByIdOptional(nonExistentId)).thenReturn(Optional.empty());
 
-  @Test
-  @DisplayName("createUser - should create successfully when username and email are unique")
-  void createUser_whenValid_returnsCreated() {
-    UserDto.CreateUserRequest request =
-        new UserDto.CreateUserRequest("newuser", "new@example.com", "Password123!", "New", "User");
+        assertThatThrownBy(() -> userService.findById(nonExistentId)).isInstanceOf(ResourceNotFoundException.class);
+    }
 
-    when(userRepository.existsByEmail("new@example.com")).thenReturn(false);
-    when(userRepository.existsByUsername("newuser")).thenReturn(false);
-    when(userMapper.toEntity(request)).thenReturn(sampleUser);
-    when(userMapper.toResponse(any(User.class))).thenReturn(sampleResponse);
-    doNothing().when(userRepository).persist(any(User.class));
+    // -------------------------------------------------------
+    // createUser
+    // -------------------------------------------------------
 
-    UserDto.UserResponse result = userService.createUser(request);
+    @Test
+    @DisplayName("createUser - should create successfully when username and email are unique")
+    void createUser_whenValid_returnsCreated() {
+        UserDto.CreateUserRequest request =
+                new UserDto.CreateUserRequest("newuser", "new@example.com", "Password123!", "New", "User", tenantId);
 
-    assertThat(result).isNotNull();
-    verify(userRepository).persist(any(User.class));
-  }
+        when(userRepository.existsByEmail("new@example.com")).thenReturn(false);
+        when(tenantRepository.findByIdOptional(tenantId)).thenReturn(Optional.of(sampleTenant));
+        when(userMapper.toEntity(request)).thenReturn(sampleUser);
+        when(userMapper.toResponse(any(User.class))).thenReturn(sampleResponse);
+        doNothing().when(userRepository).persist(any(User.class));
 
-  @Test
-  @DisplayName("createUser - should throw ConflictException when email is taken")
-  void createUser_whenEmailTaken_throwsConflict() {
-    UserDto.CreateUserRequest request =
-        new UserDto.CreateUserRequest(
-            "newuser", "taken@example.com", "Password123!", "New", "User");
+        UserDto.UserResponse result = userService.createUser(request);
 
-    when(userRepository.existsByEmail("taken@example.com")).thenReturn(true);
+        assertThat(result).isNotNull();
+        verify(userRepository).persist(any(User.class));
+    }
 
-    assertThatThrownBy(() -> userService.createUser(request))
-        .isInstanceOf(ConflictException.class)
-        .hasMessageContaining("taken@example.com");
-  }
+    @Test
+    @DisplayName("createUser - should throw ConflictException when email is taken")
+    void createUser_whenEmailTaken_throwsConflict() {
+        UserDto.CreateUserRequest request =
+                new UserDto.CreateUserRequest("newuser", "taken@example.com", "Password123!", "New", "User", tenantId);
 
-  @Test
-  @DisplayName("createUser - should throw ConflictException when username is taken")
-  void createUser_whenUsernameTaken_throwsConflict() {
-    UserDto.CreateUserRequest request =
-        new UserDto.CreateUserRequest("johndoe", "unique@example.com", "Password123!", "John", "D");
+        when(userRepository.existsByEmail("taken@example.com")).thenReturn(true);
 
-    when(userRepository.existsByEmail("unique@example.com")).thenReturn(false);
-    when(userRepository.existsByUsername("johndoe")).thenReturn(true);
+        assertThatThrownBy(() -> userService.createUser(request))
+                .isInstanceOf(ConflictException.class)
+                .hasMessageContaining("taken@example.com");
+    }
 
-    assertThatThrownBy(() -> userService.createUser(request))
-        .isInstanceOf(ConflictException.class)
-        .hasMessageContaining("johndoe");
-  }
+    @Test
+    @DisplayName("createUser - should throw ConflictException when username is taken")
+    void createUser_whenUsernameTaken_throwsConflict() {
+        UserDto.CreateUserRequest request =
+                new UserDto.CreateUserRequest("johndoe", "unique@example.com", "Password123!", "John", "D", tenantId);
 
-  // -------------------------------------------------------
-  // deleteUser
-  // -------------------------------------------------------
+        when(userRepository.existsByEmail("unique@example.com")).thenReturn(false);
 
-  @Test
-  @DisplayName("deleteUser - should throw ResourceNotFoundException when user does not exist")
-  void deleteUser_whenNotFound_throwsException() {
-    UUID nonExistentId = UUID.randomUUID();
-    when(userRepository.deleteById(nonExistentId)).thenReturn(false);
+        assertThatThrownBy(() -> userService.createUser(request))
+                .isInstanceOf(ConflictException.class)
+                .hasMessageContaining("johndoe");
+    }
 
-    assertThatThrownBy(() -> userService.deleteUser(nonExistentId))
-        .isInstanceOf(ResourceNotFoundException.class);
-  }
+    // -------------------------------------------------------
+    // deleteUser
+    // -------------------------------------------------------
+
+    @Test
+    @DisplayName("deleteUser - should throw ResourceNotFoundException when user does not exist")
+    void deleteUser_whenNotFound_throwsException() {
+        UUID nonExistentId = UUID.randomUUID();
+        when(userRepository.deleteById(nonExistentId)).thenReturn(false);
+
+        assertThatThrownBy(() -> userService.deleteUser(nonExistentId)).isInstanceOf(ResourceNotFoundException.class);
+    }
 }
